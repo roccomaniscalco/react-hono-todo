@@ -41,7 +41,7 @@ function Todo(props: TodoProps) {
   const isCompleted = Boolean(props.isCompleted);
 
   const qc = useQueryClient();
-  const { mutate: toggleTodo } = useMutation({
+  const { mutate: toggleTodo, isPending } = useMutation({
     mutationKey: ["toggleTodo"],
     mutationFn: () =>
       api.todo[":id"].$put({
@@ -60,6 +60,7 @@ function Todo(props: TodoProps) {
         name={props.title}
         checked={isCompleted}
         onChange={() => toggleTodo()}
+        disabled={isPending}
       />
     </li>
   );
@@ -67,7 +68,7 @@ function Todo(props: TodoProps) {
 
 function TodoInput() {
   const qc = useQueryClient();
-  const { mutate: createTodo } = useMutation({
+  const { mutate: createTodo, isPending: isCreatingTodo } = useMutation({
     mutationKey: ["createTodo"],
     mutationFn: (title: string) =>
       api.todo.$post({ json: { title } }).then((res) => res.json()),
@@ -77,6 +78,7 @@ function TodoInput() {
   return (
     <form
       onSubmit={(e) => {
+        if (isCreatingTodo) return;
         e.preventDefault();
         const title = new FormData(e.currentTarget).get("title") as string;
         createTodo(title);
@@ -84,7 +86,9 @@ function TodoInput() {
       }}
     >
       <input name="title" placeholder="Enter a todo" />
-      <button type="submit">Create</button>
+      <button type="submit" disabled={isCreatingTodo}>
+        Create
+      </button>
     </form>
   );
 }
