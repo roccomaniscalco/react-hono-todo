@@ -5,19 +5,24 @@
   "scripts": {
     "dev": "wrangler pages dev --compatibility-date=2023-02-05 -- pnpm vite",
     "build": "vite build",
-    "wrangle": "pnpm build && wrangler pages deploy pages"
+    "wrangle": "pnpm build && wrangler pages deploy pages",
+    "db:generate": "drizzle-kit generate",
+    "db:up": "drizzle-kit up"
   },
   "license": "MIT",
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240512.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "drizzle-kit": "^0.21.2",
     "vite": "^5.0.8",
     "wrangler": "^3.53.0"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
     "@tanstack/react-query": "^5.37.1",
+    "drizzle-orm": "^0.30.10",
     "hono": "^4.2.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

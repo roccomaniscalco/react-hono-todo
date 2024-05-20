@@ -1,12 +1,12 @@
-import { useState } from "react";
-import type { ApiType } from "../functions/api/[[route]]";
-import { hc } from "hono/client";
 import {
   QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
+import { hc, type InferResponseType } from "hono/client";
+import type { ApiType } from "../functions/api/[[route]]";
 
 const api = hc<ApiType>("/").api;
 const queryClient = new QueryClient();
@@ -14,49 +14,77 @@ const queryClient = new QueryClient();
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Hello />
-      <Sum />
+      <Todos />
+      <TodoInput />
     </QueryClientProvider>
   );
 }
 
-function Hello() {
-  const [name, setName] = useState("world");
-
-  const helloQuery = useQuery({
-    queryKey: ["hello", name],
-    queryFn: () =>
-      api.hello.$get({ query: { name } }).then((res) => res.json()),
-    placeholderData: (previousData) => previousData,
+function Todos() {
+  const { data: todos } = useQuery({
+    queryKey: ["getTodos"],
+    queryFn: () => api.todos.$get().then((res) => res.json()),
   });
 
   return (
-    <div>
-      <h1 style={{ opacity: helloQuery.isPlaceholderData ? 0.5 : 1 }}>
-        {helloQuery.data?.message}
-      </h1>
-      <input value={name} onChange={(e) => setName(e.target.value)} />
-    </div>
+    <ul>
+      {todos?.map((todo) => (
+        <Todo key={todo.id} {...todo} />
+      ))}
+    </ul>
   );
 }
 
-function Sum() {
-  const [a, setA] = useState(0);
-  const [b, setB] = useState(0);
+type TodoProps = InferResponseType<typeof api.todos.$get>[number];
+function Todo(props: TodoProps) {
+  const id = String(props.id);
+  const isCompleted = Boolean(props.isCompleted);
 
-  const sumMutation = useMutation({
-    mutationKey: ["sum"],
-    mutationFn: (data: { a: number; b: number }) =>
-      api.sum.$post({ json: data }).then((res) => res.json()),
+  const qc = useQueryClient();
+  const { mutate: toggleTodo } = useMutation({
+    mutationKey: ["toggleTodo"],
+    mutationFn: () =>
+      api.todo[":id"].$put({
+        param: { id },
+        json: { isCompleted: !isCompleted },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["getTodos"] }),
   });
 
   return (
-    <div>
-      <h1>Sum: {sumMutation.data?.sum}</h1>
-      <input value={a} onChange={(e) => setA(Number(e.target.value))} />
-      {" "}+{" "}
-      <input value={b} onChange={(e) => setB(Number(e.target.value))} />
-      <button onClick={() => sumMutation.mutate({ a, b })}>Calculate</button>
-    </div>
+    <li>
+      <label htmlFor={id}>{props.title}</label>
+      <input
+        type="checkbox"
+        id={id}
+        name={props.title}
+        checked={isCompleted}
+        onChange={() => toggleTodo()}
+      />
+    </li>
+  );
+}
+
+function TodoInput() {
+  const qc = useQueryClient();
+  const { mutate: createTodo } = useMutation({
+    mutationKey: ["createTodo"],
+    mutationFn: (title: string) =>
+      api.todo.$post({ json: { title } }).then((res) => res.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["getTodos"] }),
+  });
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const title = new FormData(e.currentTarget).get("title") as string;
+        createTodo(title);
+        e.currentTarget.reset();
+      }}
+    >
+      <input name="title" placeholder="Enter a todo" />
+      <button type="submit">Create</button>
+    </form>
   );
 }
