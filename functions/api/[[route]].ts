@@ -29,7 +29,11 @@ const api = new Hono<{ Bindings: Bindings; Variables: Variables }>()
      * @see https://orm.drizzle.team/docs/rqb
      */
     const todos = await c.var.db.query.todosTable.findMany();
-    return c.json(todos);
+    const formattedTodos = todos.map((todo) => ({
+      ...todo,
+      isCompleted: Boolean(todo.isCompleted),
+    }));
+    return c.json(formattedTodos);
   })
   .post(
     "/todo",

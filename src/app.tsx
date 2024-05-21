@@ -38,7 +38,6 @@ function Todos() {
 type TodoProps = InferResponseType<typeof api.todos.$get>[number];
 function Todo(props: TodoProps) {
   const id = String(props.id);
-  const isCompleted = Boolean(props.isCompleted);
 
   const qc = useQueryClient();
   const { mutate: toggleTodo, isPending } = useMutation({
@@ -46,7 +45,7 @@ function Todo(props: TodoProps) {
     mutationFn: () =>
       api.todo[":id"].$put({
         param: { id },
-        json: { isCompleted: !isCompleted },
+        json: { isCompleted: !props.isCompleted },
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["getTodos"] }),
   });
@@ -58,7 +57,7 @@ function Todo(props: TodoProps) {
         type="checkbox"
         id={id}
         name={props.title}
-        checked={isCompleted}
+        checked={props.isCompleted}
         onChange={() => toggleTodo()}
         disabled={isPending}
       />
