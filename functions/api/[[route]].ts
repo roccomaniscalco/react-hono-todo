@@ -52,7 +52,7 @@ const api = new Hono<{ Bindings: Bindings; Variables: Variables }>()
       const { isCompleted } = c.req.valid("json");
       const todo = await c.var.db
         .update(todosTable)
-        .set({ isCompleted: isCompleted ? 1 : 0 })
+        .set({ isCompleted: Number(isCompleted) })
         .where(eq(todosTable.id, id));
       return c.json(todo);
     }
